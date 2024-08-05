@@ -92,7 +92,7 @@ public class GeneralMetaParser implements MetaParser {
         }
 
 
-        Element contentPerson = document.getElementById("tab_id_PersonList");
+        Element contentPerson = document.getElementById("tab_content_PersonList");
         if (contentPerson == null) {
             SimpleLogger.log(LoggingLevel.DEBUG, "Couldn't parse sides for: " + aCase.getLinks().get(LinkType.META));
         } else {
@@ -133,6 +133,7 @@ public class GeneralMetaParser implements MetaParser {
             case "КПП" -> side.setKPP(src);
             case "ОГРН" -> side.setOGRN(src);
             case "ОГРНИП" -> side.setOGRNIP(src);
+            case "Перечень статей" -> side.setArticles(src);
             default -> SimpleLogger.log(LoggingLevel.WARNING, "Couldn't match property for Side: " + trg);
         }
     }
@@ -144,7 +145,7 @@ public class GeneralMetaParser implements MetaParser {
             case "Дата", "Дата события" -> step.setEventDate(src);
             case "Время", "Время слушания", "Время события" -> step.setEventTime(src);
             case "Место проведения" -> step.setEventPlace(src);
-            case "Результат события" -> step.setEventResult(src);
+            case "Результат события", "Результат" -> step.setEventResult(src);
             case "Основание для выбранного результата события", "Основания для выбранного результата события" -> step.setEventResultReason(src);
             case "Примечание" -> step.setAdditionalInfo(src);
             default -> {

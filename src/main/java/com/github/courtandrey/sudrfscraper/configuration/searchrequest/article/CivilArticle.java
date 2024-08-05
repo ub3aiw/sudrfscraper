@@ -5,10 +5,12 @@ import com.github.courtandrey.sudrfscraper.configuration.searchrequest.Field;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Setter
 @JsonAutoDetect
 public class CivilArticle implements CategorizedArticle {
     private String partOfCas;

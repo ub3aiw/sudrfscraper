@@ -357,6 +357,16 @@ public class Starter {
 
         boolean isCassationSelected = Arrays.asList(searchConfiguration.getInstanceList()).contains(Instance.CASSATION);
 
+        if (isCassationSelected && searchConfiguration.getInstanceList().length == 1) {
+            mainCCS = mainCCS.stream()
+                    .filter(x -> x.getLevel().equals(Level.CASSATION))
+                    .toList();
+
+            singleCCS = singleCCS.stream()
+                    .filter(x -> x.getLevel().equals(Level.CASSATION))
+                    .toList();
+        }
+
         if (!isCassationSelected) {
             mainCCS = removeCassationLevel(mainCCS);
             singleCCS = removeCassationLevel(singleCCS);

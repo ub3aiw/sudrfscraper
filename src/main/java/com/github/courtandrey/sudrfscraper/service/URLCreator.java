@@ -384,7 +384,6 @@ public class URLCreator {
                     "lawbookarticles%5B%5D=" + articlePart);
 
                 if (sc.getArticle() instanceof CASArticle && !checkFields()) {
-//                    sc.setEntryDateTill(LocalDate.now());
                     try {
                         endings[i] = endings[i].replace("ENTRY_DATE2D=",
                                 "ENTRY_DATE2D=" + sc.getEntryDateTill());

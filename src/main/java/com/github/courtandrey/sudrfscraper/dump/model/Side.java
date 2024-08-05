@@ -18,5 +18,6 @@ public class Side {
     private String KPP;
     private String OGRN;
     private String OGRNIP;
+    private String articles;
     private Map<String, String> notParsed;
 }

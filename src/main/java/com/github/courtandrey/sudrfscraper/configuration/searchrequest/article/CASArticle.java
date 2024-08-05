@@ -3,8 +3,10 @@ package com.github.courtandrey.sudrfscraper.configuration.searchrequest.article;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.github.courtandrey.sudrfscraper.configuration.searchrequest.Field;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 @JsonAutoDetect
 public class CASArticle implements CategorizedArticle {
     private String partOfCas;
