@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.github.courtandrey.sudrfscraper.service.LawBookHelper;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -49,11 +48,7 @@ public class ArticleDeserializer extends JsonDeserializer<Article> {
                     partOfCas = partOfCas.replace("  ", " ");
                 }
                 String mosgorsudCode = t.get("mosgorsudCode").asText("");
-                if (LawBookHelper.getMosGorSudCodeCas(mosgorsudCode) == null && !partOfCas.isEmpty()) {
-                    return null;
-                }
                 if (partOfCas.isEmpty() && Objects.equals(mosgorsudCode, "")) return new CASArticle();
-                else if (Objects.equals(mosgorsudCode, "")) return null;
                 else if (partOfCas.isEmpty()) return null;
                 return new CASArticle(partOfCas, mosgorsudCode);
             } else if ("ADMIN".equals(articleClass)) {
@@ -90,7 +85,6 @@ public class ArticleDeserializer extends JsonDeserializer<Article> {
                 String partOfUPK = t.get("partOfUPK").asText("");
                 String mosgorsudCode = t.get("mosgorsudCode").asText("");
                 if (partOfUPK.isEmpty() && Objects.equals(mosgorsudCode, "")) return new MaterialProceedingArticle();
-                else if (Objects.equals(mosgorsudCode, "")) return null;
                 else if (partOfUPK.isEmpty()) return null;
                 return new MaterialProceedingArticle(partOfUPK, mosgorsudCode);
             }
@@ -101,7 +95,6 @@ public class ArticleDeserializer extends JsonDeserializer<Article> {
                 }
                 String mosgorsudCode = t.get("mosgorsudCode").asText("");
                 if (partOfCas.isEmpty() && Objects.equals(mosgorsudCode, "")) return new CivilArticle();
-                else if (Objects.equals(mosgorsudCode, "")) return null;
                 else if (partOfCas.isEmpty()) return null;
                 return new CivilArticle(partOfCas, mosgorsudCode);
             }

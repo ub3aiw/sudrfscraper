@@ -2,7 +2,6 @@ package com.github.courtandrey.sudrfscraper.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.courtandrey.sudrfscraper.configuration.ApplicationConfiguration;
-import com.github.courtandrey.sudrfscraper.configuration.courtconfiguration.Level;
 import com.github.courtandrey.sudrfscraper.configuration.searchrequest.Field;
 import com.github.courtandrey.sudrfscraper.configuration.searchrequest.Instance;
 import com.github.courtandrey.sudrfscraper.configuration.searchrequest.SearchRequest;
@@ -23,7 +22,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,15 +86,13 @@ public class AjaxRestController {
 
     @PostMapping("/check_request")
     public ResponseEntity<String> checkRequest(@RequestBody RequestDetails requestDetails,
-    @RequestHeader(name = "Selected-Language") String language) {
+                                               @RequestHeader(name = "Selected-Language") String language) {
         try {
             ResponseEntity<String> valid = validate(requestDetails);
             if (valid != null) return valid;
 
             if (!requestDetails.getArticle().isEmpty()) {
                 SearchRequest.getInstance().setArticle(requestDetails.getArticle());
-            } else if (requestDetails.getEndDate().isEmpty()) {
-                SearchRequest.getInstance().setResultDateTill(LocalDate.now());
             }
 
             SearchRequest.getInstance().setField(Field.parseField(requestDetails.getField()));

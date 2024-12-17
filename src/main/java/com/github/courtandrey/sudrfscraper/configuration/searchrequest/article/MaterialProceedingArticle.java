@@ -34,7 +34,7 @@ public class MaterialProceedingArticle implements CategorizedArticle {
 
     @Override
     public boolean isEmpty() {
-        return partOfUPK == null && mosgorsudCode == null;
+        return partOfUPK == null;
     }
 
     @Override

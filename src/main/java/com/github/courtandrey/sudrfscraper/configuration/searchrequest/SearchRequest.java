@@ -8,7 +8,6 @@ import lombok.Setter;
 
 import java.lang.reflect.Field;
 import java.time.LocalDate;
-import java.util.List;
 
 public class SearchRequest {
     private String resultDateFrom;
@@ -111,7 +110,7 @@ public class SearchRequest {
                 throw new InitializationException(e);
             }
         }
-        setResultDateTill(LocalDate.now());
+
         return true;
     }
 
@@ -129,6 +128,12 @@ public class SearchRequest {
         if (resultDateTill != null) {
             builder.append("resultDateTill = ").append(resultDateTill).append(";");
         }
+        if (entryDateFrom != null) {
+            builder.append("entryDateFrom = ").append(entryDateFrom).append(";");
+        }
+        if (entryDateTill != null) {
+            builder.append("entryDateTill = ").append(entryDateTill).append(";");
+        }
         if (text != null) {
             builder.append("text = ").append(text).append(";");
         }
@@ -137,11 +142,10 @@ public class SearchRequest {
     }
 
     public synchronized String getResultDateFrom() {
-        return resultDateFrom;
+        return resultDateFrom == null ? "" : resultDateFrom;
     }
 
     public synchronized String getResultDateTill() {
-        return resultDateTill;
+        return resultDateTill == null ? "" : resultDateTill;
     }
-
 }

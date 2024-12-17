@@ -28,7 +28,7 @@ public class CivilArticle implements CategorizedArticle {
 
     @Override
     public boolean isEmpty() {
-        return partOfCas == null && mosgorsudCode == null;
+        return partOfCas == null;
     }
 
     @Override
