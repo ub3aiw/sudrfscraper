@@ -4,7 +4,8 @@ import com.github.courtandrey.sudrfscraper.configuration.courtconfiguration.Issu
 
 public class IssueByTextIdentifier {
     public Issue checkText(String text, Connection connection) {
-        if (text.contains("код с картинки") || text.contains("Время жизни сессии закончилось")) {
+        if (text.contains("код с картинки") || text.contains("Время жизни сессии закончилось")
+                || text.contains("Ð\u0094Ð°Ð½Ð½Ñ\u008BÐ¹ Ð·Ð°Ð¿Ñ\u0080Ð¾Ñ\u0081 Ð½ÐµÐºÐ¾Ñ\u0080Ñ\u0080ÐµÐºÑ\u0082ÐµÐ½")) {
             return Issue.CAPTCHA;
         }
 
