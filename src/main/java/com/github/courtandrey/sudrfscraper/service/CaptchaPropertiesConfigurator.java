@@ -19,7 +19,6 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -31,9 +30,7 @@ import java.util.Properties;
 import static com.github.courtandrey.sudrfscraper.service.Constant.PATH_TO_CAPTCHA;
 import static com.github.courtandrey.sudrfscraper.service.Constant.UA;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.File;
+// Импорты для 2Captcha
 import com.twocaptcha.TwoCaptcha;
 import com.twocaptcha.captcha.Normal;
 
@@ -64,11 +61,9 @@ public class CaptchaPropertiesConfigurator {
 
     private static void configureCaptchaWithRequests(CourtConfiguration cc, boolean didWellItWorkedOnceUsed, Instance in) throws InterruptedException {
         CaptchaPropertiesConfigurator cpc = new CaptchaPropertiesConfigurator(cc);
-
         if (cpc.checkProperties(didWellItWorkedOnceUsed)) return;
 
         String urlFprCaptcha = (new URLCreator(cc)).createUrlForCaptcha(in);
-
         String captcha = null;
         Document document = null;
         for (int i = 0; i < 10; i++) {
@@ -79,9 +74,8 @@ public class CaptchaPropertiesConfigurator {
                 ThreadHelper.sleep(3);
             }
         }
-        if (document == null) {
-            throw new TimeoutException();
-        }
+        if (document == null) throw new TimeoutException();
+
         try {
             for (Element e:document.getElementsByTag("tr")) {
                 Elements captchaid = e.getElementsByAttributeValue("name","captchaid");
@@ -89,7 +83,8 @@ public class CaptchaPropertiesConfigurator {
                 String dataUrl = e.getElementsByTag("img").attr("src");
                 byte[] dataBytes = Base64.getDecoder().decode(dataUrl.replaceFirst("data:.+,","").trim());
                 BufferedImage image = ImageIO.read(new ByteArrayInputStream(dataBytes));
-                captcha = view.showCaptcha(image);
+                // ЗАМЕНЕНО
+                captcha = solveAuto(image);
                 break;
             }
             if (captcha == null) {
@@ -99,7 +94,8 @@ public class CaptchaPropertiesConfigurator {
                     String replaced = dataUrl.replaceFirst("data:.+,","").trim();
                     byte[] dataBytes = Base64.getDecoder().decode(replaced);
                     BufferedImage image = ImageIO.read(new ByteArrayInputStream(dataBytes));
-                    captcha = view.showCaptcha(image);
+                    // ЗАМЕНЕНО
+                    captcha = solveAuto(image);
                     break;
                 }
             }
@@ -108,14 +104,9 @@ public class CaptchaPropertiesConfigurator {
             throw new CaptchaException();
         }
 
-
         String captchaId = document.getElementsByAttributeValue("name","captchaid").attr("value");
-
         String value = captcha + "&" + captchaId;
-
-        if (cc.getLevel()!= Level.REGION) {
-            wellItWorkedOnce = value;
-        }
+        if (cc.getLevel()!= Level.REGION) wellItWorkedOnce = value;
         cpc.setProperty(value);
     }
 
@@ -138,13 +129,9 @@ public class CaptchaPropertiesConfigurator {
 
     public static void configureCaptchaWithSelenium(CourtConfiguration cc, boolean didWellItWorkedOnceUsed, Instance i) throws InterruptedException {
         CaptchaPropertiesConfigurator cpc = new CaptchaPropertiesConfigurator(cc);
-
         if (cpc.checkProperties(didWellItWorkedOnceUsed)) return;
 
-        if (sh == null) {
-            sh = SeleniumHelper.getInstance();
-        }
-
+        if (sh == null) sh = SeleniumHelper.getInstance();
         String urlFprCaptcha = (new URLCreator(cc)).createUrlForCaptcha(i);
 
         if (sh.getCurrentUrl().equals(urlFprCaptcha)) {
@@ -163,7 +150,8 @@ public class CaptchaPropertiesConfigurator {
                 String replaced = dataUrl.replaceFirst("data:.+,","").trim();
                 byte[] dataBytes = Base64.getDecoder().decode(replaced);
                 BufferedImage image = ImageIO.read(new ByteArrayInputStream(dataBytes));
-                captcha = view.showCaptcha(image);
+                // ЗАМЕНЕНО
+                captcha = solveAuto(image);
                 break;
             }
             if (captcha == null) {
@@ -173,7 +161,8 @@ public class CaptchaPropertiesConfigurator {
                         String dataUrl = e.findElement(By.tagName("img")).getAttribute("src");
                         byte[] dataBytes = Base64.getDecoder().decode(dataUrl.replaceFirst("data:.+,","").trim());
                         BufferedImage image = ImageIO.read(new ByteArrayInputStream(dataBytes));
-                        captcha = view.showCaptcha(image);
+                        // ЗАМЕНЕНО
+                        captcha = solveAuto(image);
                         break;
                     } catch (NoSuchElementException ignored) {}
                 }
@@ -184,14 +173,46 @@ public class CaptchaPropertiesConfigurator {
         }
 
         String captchaId = sh.findElement(By.name("captchaid")).getAttribute("value");
-
         String value = captcha + "&" + captchaId;
+        if (cc.getLevel()!= Level.REGION) wellItWorkedOnce = value;
+        cpc.setProperty(value);
+    }
 
-        if (cc.getLevel()!= Level.REGION) {
-            wellItWorkedOnce = value;
+    private static String solveAuto(BufferedImage image) {
+        String apiKey = null;
+        Properties appProps = new Properties();
+        try (InputStream is = new FileInputStream("config.properties")) {
+            appProps.load(is);
+            apiKey = appProps.getProperty("2captcha.api.key");
+        } catch (Exception e) {
+            SimpleLogger.log(LoggingLevel.WARNING, "Config not found or error reading.");
         }
 
-        cpc.setProperty(value);
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            return view.showCaptcha(image);
+        }
+
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("sudrf_captcha", ".png");
+            ImageIO.write(image, "png", tempFile);
+
+            TwoCaptcha solver = new TwoCaptcha(apiKey);
+            Normal captcha = new Normal();
+            captcha.setFile(tempFile.getAbsolutePath());
+            captcha.setMinLen(4);
+            captcha.setMaxLen(6);
+
+            SimpleLogger.log(LoggingLevel.INFO, "Отправка в 2Captcha...");
+            solver.solve(captcha);
+            return captcha.getCode();
+        } catch (Throwable t) {
+            SimpleLogger.log(LoggingLevel.WARNING, "2Captcha error: " + t.getMessage());
+            if (t instanceof InterruptedException) Thread.currentThread().interrupt();
+            return view.showCaptcha(image);
+        } finally {
+            if (tempFile != null && tempFile.exists()) tempFile.delete();
+        }
     }
 
     private void setProperty(String value) {
@@ -216,54 +237,4 @@ public class CaptchaPropertiesConfigurator {
         }
         return true;
     }
-
-    private static String solveAuto(BufferedImage image) {
-    String apiKey = null;
-    Properties appProps = new Properties();
-
-    try (InputStream is = new FileInputStream("config.properties")) {
-        appProps.load(is);
-        apiKey = appProps.getProperty("2captcha.api.key");
-    } catch (IOException e) {
-        SimpleLogger.log(LoggingLevel.WARNING, "Файл config.properties не найден.");
-    }
-
-    if (apiKey == null || apiKey.trim().isEmpty()) {
-        return view.showCaptcha(image);
-    }
-
-    TwoCaptcha solver = new TwoCaptcha(apiKey);
-    File tempFile = null;
-    
-    try {
-        tempFile = File.createTempFile("sudrf_captcha", ".png");
-        ImageIO.write(image, "png", tempFile);
-
-        Normal captcha = new Normal();
-        captcha.setFile(tempFile.getAbsolutePath());
-        captcha.setMinLen(4);
-        captcha.setMaxLen(6);
-
-        SimpleLogger.log(LoggingLevel.INFO, "Отправка в 2Captcha...");
-        
-        // ВОТ ЗДЕСЬ ПРОИСХОДИТ ОШИБКА
-        solver.solve(captcha); 
-        
-        return captcha.getCode();
-        
-    } catch (InterruptedException e) {
-        // Восстанавливаем статус прерывания потока
-        Thread.currentThread().interrupt();
-        SimpleLogger.log(LoggingLevel.WARNING, "Процесс разгадывания был прерван.");
-        return view.showCaptcha(image);
-    } catch (Exception e) {
-        SimpleLogger.log(LoggingLevel.WARNING, "Ошибка 2Captcha: " + e.getMessage());
-        return view.showCaptcha(image);
-    } finally {
-        if (tempFile != null && tempFile.exists()) {
-            tempFile.delete();
-        }
-    }
-}
-    
 }
