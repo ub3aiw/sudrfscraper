@@ -178,42 +178,50 @@ public class CaptchaPropertiesConfigurator {
         cpc.setProperty(value);
     }
 
-    private static String solveAuto(BufferedImage image) {
-        String apiKey = null;
-        Properties appProps = new Properties();
-        try (InputStream is = new FileInputStream("config.properties")) {
-            appProps.load(is);
-            apiKey = appProps.getProperty("2captcha.api.key");
-        } catch (Exception e) {
-            SimpleLogger.log(LoggingLevel.WARNING, "Config not found or error reading.");
-        }
-
-        if (apiKey == null || apiKey.trim().isEmpty()) {
-            return view.showCaptcha(image);
-        }
-
-        File tempFile = null;
-        try {
-            tempFile = File.createTempFile("sudrf_captcha", ".png");
-            ImageIO.write(image, "png", tempFile);
-
-            TwoCaptcha solver = new TwoCaptcha(apiKey);
-            Normal captcha = new Normal();
-            captcha.setFile(tempFile.getAbsolutePath());
-            captcha.setMinLen(4);
-            captcha.setMaxLen(6);
-
-            SimpleLogger.log(LoggingLevel.INFO, "Отправка в 2Captcha...");
-            solver.solve(captcha);
-            return captcha.getCode();
-        } catch (Throwable t) {
-            SimpleLogger.log(LoggingLevel.WARNING, "2Captcha error: " + t.getMessage());
-            if (t instanceof InterruptedException) Thread.currentThread().interrupt();
-            return view.showCaptcha(image);
-        } finally {
-            if (tempFile != null && tempFile.exists()) tempFile.delete();
-        }
+    private static String solveAuto(BufferedImage image) throws InterruptedException {
+    String apiKey = null;
+    Properties appProps = new Properties();
+    
+    // 1. Пытаемся прочитать ключ
+    try (InputStream is = new FileInputStream("config.properties")) {
+        appProps.load(is);
+        apiKey = appProps.getProperty("2captcha.api.key");
+    } catch (Exception e) {
+        SimpleLogger.log(LoggingLevel.WARNING, "Config not found or error reading.");
     }
+
+    // 2. Если ключа нет — вызываем ручной ввод. 
+    // Именно здесь может вылететь InterruptedException, поэтому в заголовке метода теперь есть throws.
+    if (apiKey == null || apiKey.trim().isEmpty()) {
+        return view.showCaptcha(image);
+    }
+
+    File tempFile = null;
+    try {
+        tempFile = File.createTempFile("sudrf_captcha", ".png");
+        ImageIO.write(image, "png", tempFile);
+
+        TwoCaptcha solver = new TwoCaptcha(apiKey);
+        Normal captcha = new Normal();
+        captcha.setFile(tempFile.getAbsolutePath());
+        captcha.setMinLen(4);
+        captcha.setMaxLen(6);
+
+        SimpleLogger.log(LoggingLevel.INFO, "Отправка в 2Captcha...");
+        solver.solve(captcha);
+        return captcha.getCode();
+    } catch (InterruptedException e) {
+        // Если прервали сам процесс 2Captcha
+        Thread.currentThread().interrupt();
+        throw e; 
+    } catch (Throwable t) {
+        SimpleLogger.log(LoggingLevel.WARNING, "2Captcha error: " + t.getMessage());
+        // Если ошибка API — откатываемся на ручной ввод
+        return view.showCaptcha(image);
+    } finally {
+        if (tempFile != null && tempFile.exists()) tempFile.delete();
+    }
+}
 
     private void setProperty(String value) {
         props.setProperty(String.valueOf(cc.getId()),value);
