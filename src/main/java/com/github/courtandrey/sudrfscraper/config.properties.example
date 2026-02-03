@@ -1,0 +1,2 @@
+# Rename this file into config.properties and enter your 2Captcha API key here
+2captcha.api.key=YOUR_API_KEY_HERE
