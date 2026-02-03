@@ -176,7 +176,7 @@
             <version>2.8.0</version>
         </dependency>
 		<dependency>
-		    <groupId>com.2captcha</groupId>
+		    <groupId>com.github.2captcha</groupId>
 		    <artifactId>2captcha-java</artifactId>
 		    <version>1.0.1</version>
 		</dependency>
