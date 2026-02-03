@@ -221,15 +221,13 @@ public class CaptchaPropertiesConfigurator {
     String apiKey = null;
     Properties appProps = new Properties();
 
-    // 1. Пытаемся прочитать ключ из файла
     try (InputStream is = new FileInputStream("config.properties")) {
         appProps.load(is);
         apiKey = appProps.getProperty("2captcha.api.key");
     } catch (IOException e) {
-        SimpleLogger.log(LoggingLevel.WARNING, "Файл config.properties не найден. Переход на ручной ввод.");
+        SimpleLogger.log(LoggingLevel.WARNING, "Файл config.properties не найден.");
     }
 
-    // 2. Если ключа нет, сразу возвращаем ручной ввод
     if (apiKey == null || apiKey.trim().isEmpty()) {
         return view.showCaptcha(image);
     }
@@ -238,7 +236,6 @@ public class CaptchaPropertiesConfigurator {
     File tempFile = null;
     
     try {
-        // 3. Создаем временный файл
         tempFile = File.createTempFile("sudrf_captcha", ".png");
         ImageIO.write(image, "png", tempFile);
 
@@ -248,15 +245,21 @@ public class CaptchaPropertiesConfigurator {
         captcha.setMaxLen(6);
 
         SimpleLogger.log(LoggingLevel.INFO, "Отправка в 2Captcha...");
-        solver.solve(captcha);
+        
+        // ВОТ ЗДЕСЬ ПРОИСХОДИТ ОШИБКА
+        solver.solve(captcha); 
         
         return captcha.getCode();
         
+    } catch (InterruptedException e) {
+        // Восстанавливаем статус прерывания потока
+        Thread.currentThread().interrupt();
+        SimpleLogger.log(LoggingLevel.WARNING, "Процесс разгадывания был прерван.");
+        return view.showCaptcha(image);
     } catch (Exception e) {
-        SimpleLogger.log(LoggingLevel.WARNING, "Ошибка автоматизации: " + e.getMessage());
+        SimpleLogger.log(LoggingLevel.WARNING, "Ошибка 2Captcha: " + e.getMessage());
         return view.showCaptcha(image);
     } finally {
-        // 4. Обязательно удаляем временный файл в любом случае
         if (tempFile != null && tempFile.exists()) {
             tempFile.delete();
         }
