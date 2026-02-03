@@ -31,6 +31,12 @@ import java.util.Properties;
 import static com.github.courtandrey.sudrfscraper.service.Constant.PATH_TO_CAPTCHA;
 import static com.github.courtandrey.sudrfscraper.service.Constant.UA;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.File;
+import com.twocaptcha.TwoCaptcha;
+import com.twocaptcha.captcha.Normal;
+
 public class CaptchaPropertiesConfigurator {
     private static SeleniumHelper sh;
     private final CourtConfiguration cc;
@@ -210,4 +216,51 @@ public class CaptchaPropertiesConfigurator {
         }
         return true;
     }
+
+    private static String solveAuto(BufferedImage image) {
+    String apiKey = null;
+    Properties appProps = new Properties();
+
+    // 1. Пытаемся прочитать ключ из файла
+    try (InputStream is = new FileInputStream("config.properties")) {
+        appProps.load(is);
+        apiKey = appProps.getProperty("2captcha.api.key");
+    } catch (IOException e) {
+        SimpleLogger.log(LoggingLevel.WARNING, "Файл config.properties не найден. Переход на ручной ввод.");
+    }
+
+    // 2. Если ключа нет, сразу возвращаем ручной ввод
+    if (apiKey == null || apiKey.trim().isEmpty()) {
+        return view.showCaptcha(image);
+    }
+
+    TwoCaptcha solver = new TwoCaptcha(apiKey);
+    File tempFile = null;
+    
+    try {
+        // 3. Создаем временный файл
+        tempFile = File.createTempFile("sudrf_captcha", ".png");
+        ImageIO.write(image, "png", tempFile);
+
+        Normal captcha = new Normal();
+        captcha.setFile(tempFile.getAbsolutePath());
+        captcha.setMinLen(4);
+        captcha.setMaxLen(6);
+
+        SimpleLogger.log(LoggingLevel.INFO, "Отправка в 2Captcha...");
+        solver.solve(captcha);
+        
+        return captcha.getCode();
+        
+    } catch (Exception e) {
+        SimpleLogger.log(LoggingLevel.WARNING, "Ошибка автоматизации: " + e.getMessage());
+        return view.showCaptcha(image);
+    } finally {
+        // 4. Обязательно удаляем временный файл в любом случае
+        if (tempFile != null && tempFile.exists()) {
+            tempFile.delete();
+        }
+    }
+}
+    
 }
