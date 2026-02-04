@@ -182,7 +182,7 @@ public class CaptchaPropertiesConfigurator {
     String apiKey = null;
     Properties appProps = new Properties();
     
-    // 1. Пытаемся прочитать ключ
+    // пытаемся прочитать ключ
     try (InputStream is = new FileInputStream("config.properties")) {
         appProps.load(is);
         apiKey = appProps.getProperty("2captcha.api.key");
@@ -190,8 +190,7 @@ public class CaptchaPropertiesConfigurator {
         SimpleLogger.log(LoggingLevel.WARNING, "Config not found or error reading.");
     }
 
-    // 2. Если ключа нет — вызываем ручной ввод. 
-    // Именно здесь может вылететь InterruptedException, поэтому в заголовке метода теперь есть throws.
+    // если ключа нет — вызываем ручной ввод
     if (apiKey == null || apiKey.trim().isEmpty()) {
         return view.showCaptcha(image);
     }
@@ -211,12 +210,12 @@ public class CaptchaPropertiesConfigurator {
         solver.solve(captcha);
         return captcha.getCode();
     } catch (InterruptedException e) {
-        // Если прервали сам процесс 2Captcha
+        // если прервали сам процесс 2Captcha
         Thread.currentThread().interrupt();
         throw e; 
     } catch (Throwable t) {
         SimpleLogger.log(LoggingLevel.WARNING, "2Captcha error: " + t.getMessage());
-        // Если ошибка API — откатываемся на ручной ввод
+        // если ошибка API — откатываемся на ручной ввод
         return view.showCaptcha(image);
     } finally {
         if (tempFile != null && tempFile.exists()) tempFile.delete();
